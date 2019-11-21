@@ -13,9 +13,10 @@ pacman::p_load(tidyverse, ggplot2, dplyr, lubridate)
 ## Set file paths
 path.pspd <- "D:/CloudStation/Professional/Research Data/Physician Shared Patient Data/Physician Shared Patients 90-days"
 path.npi <- "D:/CloudStation/Professional/Research Data/Physician NPI and Taxonomy"
+path.compare <- "D:/CloudStation/Professional/Research Data/Physician Compare"
 
 ## Run initial code files
-source(SharedPatientData.R)
+source("data-code/SharedPatientData.R")
 
 
 # Merge datasets ----------------------------------------------------------
