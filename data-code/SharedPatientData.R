@@ -15,16 +15,7 @@ path.pspd <- "D:/CloudStation/Professional/Research Data/Physician Shared Patien
 path.npi <- "D:/CloudStation/Professional/Research Data/Physician NPI and Taxonomy"
 
 
-# Read data ---------------------------------------------------------------
-## Shared patient data
-PSPD.2009 <- read_csv(paste(path.pspd,"\\PSPD 2009.txt",sep=""), 
-                   col_names=c("npi1","npi2","paircount","benecount","samedayvisits"), 
-                   col_types = cols(
-                     npi1=col_character(),
-                     npi2=col_character(),
-                     paircount=col_double(),
-                     benecount=col_double(),
-                     samedayvisits=col_double() ))
+# Read and filter data ---------------------------------------------------------------
 
 ## NPI/taxonomy data (scraped from NPPES registry)
 taxonomy <- read_csv(paste(path.npi,"\\npi_wdata.csv", sep=""), 
@@ -36,27 +27,39 @@ taxonomy <- read_csv(paste(path.npi,"\\npi_wdata.csv", sep=""),
                        desc_tax=col_character()
                      ))
 
-## Join shared patient data with taxonomy data (for initiating and receiving physicians)
-PSPD.tax <- PSPD.2009 %>%
-  left_join(taxonomy, by=c("npi1"="npi")) %>%
-  rename(zip1=zip, state1=state, t_code1=t_code, desc_tax1=desc_tax)
+for (t in 2009:2015){
+  
+  ## Shared patient data
+  PSPD.year <- read_csv(paste0(path.pspd,"/PSPD ",t,".txt"), 
+                        col_names=c("npi1","npi2","paircount","benecount","samedayvisits"), 
+                        col_types = cols(
+                          npi1=col_character(),
+                          npi2=col_character(),
+                          paircount=col_double(),
+                          benecount=col_double(),
+                          samedayvisits=col_double() 
+                        ))
 
-PSPD.tax <- PSPD.tax %>%
-  left_join(taxonomy, by=c("npi2"="npi")) %>%
-  rename(zip2=zip, state2=state, t_code2=t_code, desc_tax2=desc_tax)
+  ## Join shared patient data with taxonomy data (for initiating and receiving physicians)
+  PSPD.tax <- PSPD.year %>%
+    left_join(taxonomy, by=c("npi1"="npi")) %>%
+    rename(zip1=zip, state1=state, t_code1=t_code, desc_tax1=desc_tax)
 
-
-# Clean data --------------------------------------------------------------
-
-## Filter for potential PCPs (initiating physician)
-PSPD.tax.pcp <- PSPD.tax %>%
-  filter(str_detect(t_code1, "^207R") |
+  PSPD.tax <- PSPD.tax %>%
+    left_join(taxonomy, by=c("npi2"="npi")) %>%
+    rename(zip2=zip, state2=state, t_code2=t_code, desc_tax2=desc_tax) %>%
+    mutate(year=t)
+  
+  
+  ## Filter for potential PCPs (initiating physician)
+  PSPD.tax.pcp <- PSPD.tax %>%
+    filter(str_detect(t_code1, "^207R") |
            str_detect(t_code1, "^207Q") |
            str_detect(t_code1, "^208D")) 
 
-## Filter for potential orthopedic specialists (receiving physician)
-PSPD.tax.pcp <- PSPD.tax.pcp %>%
-  filter(str_detect(t_code2, "^1744") |
+  ## Filter for specialists (receiving physician)
+  PSPD.tax.pcp <- PSPD.tax.pcp %>%
+    filter(str_detect(t_code2, "^1744") |
            str_detect(t_code2, "^1932") |
            str_detect(t_code2, "^1934") |
            str_detect(t_code2, "^202K") |
@@ -71,6 +74,14 @@ PSPD.tax.pcp <- PSPD.tax.pcp %>%
            str_detect(t_code2, "^208G") |
            str_detect(t_code2, "^213E"))
 
+  if (t==2009) {
+    PSPD.final <- PSPD.tax.pcp
+  }
+  if (t>2009) {
+    PSPD.final <- rbind(PSPD.final,PSPD.tax.pcp)
+  }
+}
+  
 ref.spec <- 
   PSPD.tax.pcp %>% 
   group_by(t_code2, desc_tax2) %>% 
