@@ -2,13 +2,13 @@
 ## Title:         Read-in Physician Shared Patients and Taxonomy Data
 ## Author:        Ian McCarthy
 ## Date Created:  10/10/2019
-## Date Edited:   11/21/2019
+## Date Edited:   8/24/2020
 
 
 # Read and filter data ---------------------------------------------------------------
 
 ## NPI/taxonomy data (scraped from NPPES registry)
-taxonomy <- read_csv(paste(path.npi,"\\npi_wdata.csv", sep=""), 
+taxonomy <- read_csv(paste0(path.npi,"\\npi_wdata.csv"), 
                      col_types = cols(
                        npi=col_character(),
                        zip=col_character(),

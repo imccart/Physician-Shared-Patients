@@ -2,7 +2,7 @@
 ## Title:         Physician Shared Patients Data
 ## Author:        Ian McCarthy
 ## Date Created:  10/10/2019
-## Date Edited:   11/21/2019
+## Date Edited:   1/30/2020
 
 
 
@@ -10,10 +10,9 @@
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, ggplot2, dplyr, lubridate)
 
-## Set file paths
-path.pspd <- "C:/..."
-path.npi <- "C:/..."
-path.compare <- "C:/..."
+
+## set paths
+source("data-code/paths.R")
 
 ## Run initial code files
 source("data-code/SharedPatientData.R")
