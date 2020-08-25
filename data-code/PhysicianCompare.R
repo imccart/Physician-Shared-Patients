@@ -2,8 +2,7 @@
 ## Title:         Read-in Physician Compare Data
 ## Author:        Ian McCarthy
 ## Date Created:  11/21/2019
-## Date Edited:   8/24/2020
-
+## Date Edited:   8/25/2020
 
 
 
