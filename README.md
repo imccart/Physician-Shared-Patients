@@ -4,7 +4,9 @@ This describes all of the code files and raw data sources needed to form data on
 ## Build Data File
 Each of the relevant data sources are available individually and discussed in more detail below. Just scroll down to the [Raw Data Sources](#raw-data). All of the code files are called as part of the master "build data" script, [_BuildFinalData.R](data-code/_BuildFinalData.R). I name these files so that they appear (by default) in folders in a way that makes sense to me. So the main script begins with an underscore, and the individual files are numbered where needed. This is just personal preference but helps me to keep things in order.
 
-The final data created from the [raw data sources](#raw-data) and [_BuildFinalData.R](data-code/_BuildFinalData.R) code file reflects...
+The [_BuildFinalData.R](data-code/_BuildFinalData.R) code file creates two final datasets: an "edge list" and a "node list". The edge list consists of the physician pairs from the shared patient data, as well as measures of the magnitude of each edge (measured simply by the count of shared patients). The node list is a data set with characteristics for each physician, such as specialty, school attended, and location of the practice.
+
+While the focus of this repo is the shared patient data, I'll briefly use the edge and node lists to look into the network structure of physician referrals. The code for this analysis is in [_Analysis.R](data-code/_Analysis.R).
 
 ## Raw Data
 This repository uses two main datsets. All of the raw data are publicly available from the Centers for Medicare and Medicaid Services (CMS) website, with some caveats discussed below.
@@ -31,6 +33,6 @@ The NPPES information is also available in a lookup form [here](https://npiregis
 
 ## Code Files
 
-1. [Shared Patient Data](data-code/SharedPatientData.R). This creates a relatively clean dataset consisting of all PCP/specialist physician pairs. I denote a PCP as any physician with a taxonomy code beginning with 207R, 207Q, or 208D. But users can adjust this easily for their own purposes.
+1. [Shared Patient Data](data-code/SharedPatientData.R). This creates the edge list consisting of all PCP/specialist physician pairs and the counts of shared patients between each pair. I denote a PCP as any physician with a taxonomy code beginning with 207R, 207Q, or 208D. But users can adjust this easily for their own purposes. Since I focus on PCPs and specialists, this will be a directed network. 
 
-2. [Physician Compare Data](data-code/PhysicianCompare.R). This creates a quarterly dataset of physician NPIs with information on practice location, specialty, and hospital affiliation. For these data, hospital affiliation is based on Medicare claims. So it simply reflects that a physician billed for services at that hospital (nothing about hospital ownership of the practice).
+2. [Physician Compare Data](data-code/PhysicianCompare.R). This creates a quarterly dataset of physician NPIs with information on practice location, specialty, and hospital affiliation. For these data, hospital affiliation is based on Medicare claims, so it simply reflects that a physician billed for services at that hospital (nothing about hospital ownership of the practice). This information forms the node list.
