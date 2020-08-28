@@ -2,7 +2,7 @@
 ## Title:         Read-in Physician Shared Patients and Taxonomy Data
 ## Author:        Ian McCarthy
 ## Date Created:  10/10/2019
-## Date Edited:   8/24/2020
+## Date Edited:   8/27/2020
 
 
 # Read and filter data ---------------------------------------------------------------
@@ -63,11 +63,6 @@ for (t in 2009:2015){
            str_detect(t_code2, "^208C") |
            str_detect(t_code2, "^208G") |
            str_detect(t_code2, "^213E"))
-
-  if (t==2009) {
-    PSPD.final <- PSPD.tax.pcp
-  }
-  if (t>2009) {
-    PSPD.final <- rbind(PSPD.final,PSPD.tax.pcp)
-  }
+  
+  assign(paste0("PSPD.final.",t),PSPD.tax.pcp)
 }

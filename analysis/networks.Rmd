@@ -1,0 +1,163 @@
+---
+title: "Physician Referral Networks"
+author: "Ian McCarthy"
+date: "August 2020"
+output: 
+  bookdown::html_document2:
+    toc: TRUE
+    toc_float: TRUE
+    theme: readable
+    fig_caption: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, stringr, readxl, data.table, gdata, scales,
+               stargazer, kableExtra, tidygraph, ggraph)
+```
+
+# Starting off
+
+To begin, let's read in the final edge and node lists created with the [_BuildFinalData.R](../data-code/_BuildFinalData.R) code file, along with the 2010 physician shared patient data from [SharedPatientData.R](../data-code/SharedPatientData.R). Note that the edge list is taken directly from the shared patient data already, but the shared patient data is a more traditional dataframe with information about physicians in any given pair.
+
+```{r}
+edge_data <- readRDS("../data/edge_data.RData")
+node_data <- readRDS("../data/node_data.RData")
+pspd_data <- readRDS("../data/pspd_data.RData")
+```
+
+<br>
+
+```{r echo=F}
+ref.spec <- pspd_data %>% 
+  group_by(t_code2, desc_tax2) %>% 
+  summarize(cnt=n()) %>%
+  arrange(-cnt)
+```
+
+Before working with the networks, let's get a sense of the types of specialists and physicians that made it to the final data. These specialists and their frequencies are listed in Table \@ref(tab:spec-list). Unfortunately, we see that the most commonly occurring specialist is simply "specialist". We could try to get some more info there from the physician compare data, but this is enough for now. The top row here means that there are `r format(as.numeric(ref.spec[1,3]), big.mark=",")` connections between a primary care physician and simply "specialist" across the U.S. in 2010. This is out of `r format(nrow(pspd_data),big.mark=",")` total PCP/specialist pairs throughout the country (including all specialists, not just those with a taxonomy description limited to "specialist").
+
+```{r spec-list, echo=FALSE}
+knitr::kable(ref.spec, 
+             col.names=c("Taxonomy Code", "Description", "Count"),
+             caption = "Count of Specialists Receiving a Referral", 
+             booktabs = TRUE,
+             escape=F,
+             align=c("l","l","r"),
+             format.args=list(big.mark=","),
+             position="h") %>% 
+  kable_styling(full_width=F) %>%
+  scroll_box(width = "100%", height = "400px")
+```
+
+<br>
+
+```{r echo=F}
+ref.pcp <- pspd_data %>% 
+  group_by(t_code1, desc_tax1) %>% 
+  summarize(cnt=n()) %>%
+  arrange(-cnt)
+```
+
+Let's do the same thing for referring physicians, just to see the types of physicians I'm classifying as "primary care". These physicians and frequencies are listed in Table \@ref(tab:pcp-list). Again, the top row here means that `r format(as.numeric(ref.pcp[1,3]),big.mark=",")` of all PCP/specialist connections are from a PCP classified as "internal medicine" doctors.
+
+```{r pcp-list, echo=FALSE}
+knitr::kable(ref.pcp, 
+             col.names=c("Taxonomy Code", "Description", "Count"),
+             caption = "Count of Referring Physicians", 
+             booktabs = TRUE,
+             escape=F,
+             align=c("l","l","r"),
+             format.args=list(big.mark=","),
+             position="h") %>% 
+  kable_styling(full_width=F) %>%
+  scroll_box(width = "100%", height = "400px")
+```
+
+<br>
+
+Finally, before moving on to the network structure, let's just summarize the numbers of shared patients we see in the data, along with a few other varialbes of interest. Table \@ref(tab:sum-stats) presents the mean, standard deviation, min, and max for the following variables: 1) "PCP to specialist", which measures the number of specialists to which a given PCP shares patients; 2) "Specialist from PCP", which measures the number of PCPs from which a specialist receives patients; 3) "Patient visits", measuring the number of visits among the shared patients between a given PCP/specialist pair; 4) "Same-day visits", measuring the number of visits on the same day to both the PCP and specialist in a pair; and 5) "Unique patients", which measures the number of patients shared between a given PCP and specialist (smaller than the number of visits, since the same patient may have multiple visits).
+
+
+```{r sum-stats, echo=FALSE}
+shared.sum <- pspd_data %>% 
+  group_by(npi1) %>% mutate(pcp_count=n()) %>% ungroup() %>%
+  group_by(npi2) %>% mutate(spec_count=n()) %>% ungroup()
+
+sum.stats <- shared.sum %>% 
+  summarize_at(c("pcp_count","spec_count","samedayvisits", "paircount", "benecount"), 
+               list(mean, sd, min, max), na.rm=TRUE)
+
+mean.stats <- sum.stats %>% select(ends_with("_fn1")) %>%
+  pivot_longer(cols=ends_with("_fn1"),
+               values_to="mean") %>%
+  mutate(name=str_remove(name,"_fn1"))
+
+
+std.stats <- sum.stats %>% select(ends_with("_fn2")) %>%
+  pivot_longer(cols=ends_with("_fn2"),
+               values_to="std") %>%
+  mutate(name=str_remove(name,"_fn2"))
+
+
+min.stats <- sum.stats %>% select(ends_with("_fn3")) %>%
+  pivot_longer(cols=ends_with("_fn3"),
+               values_to="min") %>%
+  mutate(name=str_remove(name,"_fn3"))
+
+
+max.stats <- sum.stats %>% select(ends_with("_fn4")) %>%
+  pivot_longer(cols=ends_with("_fn4"),
+               values_to="max") %>%
+  mutate(name=str_remove(name,"_fn4"))
+
+final.sum.stats <- mean.stats %>%
+  left_join(std.stats, by="name") %>%
+  left_join(min.stats, by="name") %>%
+  left_join(max.stats, by="name") %>%
+  mutate(name=case_when(
+    name=="pcp_count" ~ "PCP to specialist",
+    name=="spec_count" ~ "Specialist from PCP",
+    name=="paircount" ~ "Patient visits",
+    name=="samedayvisits" ~ "Same-day visits",    
+    name=="benecount" ~ "Unique patients"
+  ))
+
+knitr::kable(final.sum.stats, 
+             col.names=c("Variable", "Mean", "Std. Dev.", "Min", "Max"),
+             digits=2,
+             caption = "Summary Statistics for Shared Patients", 
+             booktabs = TRUE,
+             escape=F,
+             align=c("l","r","r","r","r"),
+             format.args=list(big.mark=","),
+             position="h") %>% 
+  kable_styling(full_width=F)
+```
+
+One interesting takeaway from Table \@ref(tab:sum-stats) is that PCPs have far fewer connections to individual specialists than specialists do with individual PCPs. Specifically, the average PCP shares patients with `r round(as.numeric(final.sum.stats[1,2]),0)` different specialists, while the average specialist receives patients from `r round(as.numeric(final.sum.stats[2,2]),0)` different PCPs.
+
+
+# Referral Networks
+
+Now let's take a look at the network structure of PCP referrals to specialist, focusing on shared patients among physicians in Atlanta, GA. For this, we'll use the `tidygraph` package.
+
+```{r echo=FALSE}
+edge_small <- edge_data %>% filter()
+  group_by(from) %>% mutate(pcp_count=n()) %>% ungroup() %>%
+  top_n(10, wt=pcp_count) %>%
+  select(from, to, weight)
+  
+edge.npis <- rbind(edge_small %>% select(npi=from), edge_small %>% select(npi=to))
+node_small <- node_data %>% inner_join(edge.npis, by="npi") %>% select(name=npi, graduation=graduation_1)
+
+referrals <- as_tbl_graph(edge_small, directed=TRUE)
+referrals %>%
+  ggraph(layout="kk") +
+  geom_node_point() + 
+  geom_edge_link(aes(width=weight), alpha=0.8) +
+  scale_edge_width(range=c(0.2,2)) +
+  labs(edge_width = "Visits") +
+  theme_graph()
+```

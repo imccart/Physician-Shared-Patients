@@ -2,11 +2,11 @@
 This describes all of the code files and raw data sources needed to form data on physician networks and referral patterns. Project-specific uses of these data are treated as their own repositories and will be cited here over time. This is a living document and changes regularly.
 
 ## Build Data File
-Each of the relevant data sources are available individually and discussed in more detail below. Just scroll down to the [Raw Data Sources](#raw-data). All of the code files are called as part of the master "build data" script, [_BuildFinalData.R](data-code/_BuildFinalData.R). I name these files so that they appear (by default) in folders in a way that makes sense to me. So the main script begins with an underscore, and the individual files are numbered where needed. This is just personal preference but helps me to keep things in order.
+Each of the relevant data sources are available individually and discussed in more detail below. Just scroll down to the [Raw Data Sources](#raw-data). All of the code files are called as part of the master "build data" script, [_BuildFinalData.R](data-code/_BuildFinalData.R). 
 
-The [_BuildFinalData.R](data-code/_BuildFinalData.R) code file creates two final datasets: an "edge list" and a "node list". The edge list consists of the physician pairs from the shared patient data, as well as measures of the magnitude of each edge (measured simply by the count of shared patients). The node list is a data set with characteristics for each physician, such as specialty, school attended, and location of the practice.
+The [_BuildFinalData.R](data-code/_BuildFinalData.R) code file creates two final datasets: an "edge list" and a "node list". The edge list consists of the physician pairs from the shared patient data, as well as measures of the magnitude of each edge (measured simply by the count of shared patients). The node list is a data set with characteristics for each physician, such as specialty, school attended, and location of the practice. I create seperate edge and node lists for each year from 2010 through 2015.
 
-While the focus of this repo is the shared patient data, I'll briefly use the edge and node lists to look into the network structure of physician referrals. The code for this analysis is in [_Analysis.R](data-code/_Analysis.R).
+While the focus of this repo is the shared patient data, I use the edge and node lists to quickly examine the network structure of physician referrals using the `tidygraph` package. Since this is just some quick descriptive work, I limit this to referrals in the Atlanta, GA area, but this restriction can easily be modified in the code. This analysis is available [here](analysis/networks.html).
 
 ## Raw Data
 This repository uses two main datsets. All of the raw data are publicly available from the Centers for Medicare and Medicaid Services (CMS) website, with some caveats discussed below.

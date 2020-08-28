@@ -2,7 +2,7 @@
 ## Title:         Read-in Physician Compare Data
 ## Author:        Ian McCarthy
 ## Date Created:  11/21/2019
-## Date Edited:   8/25/2020
+## Date Edited:   8/27/2020
 
 
 
@@ -658,3 +658,177 @@ phycompare.2015.q4 <- read_csv(paste0(path.compare,"/Demographics/2015/2015_Q4.c
                                  pqrs_incentive=col_character(),
                                  million_hearts=col_character()
                                ), na=".")
+
+
+
+# Clean Data --------------------------------------------------------------
+
+## use 2013 q2 for 2010-2013 (earliest data available from physician compare)
+phycompare.2013 <- phycompare.2013.q2 %>%
+  mutate(zip = str_sub(zipcode, start=1, end=5)) %>%
+  select(npi, pac_id, enroll_id, last_name, first_name, suffix, gender, credential, 
+         medical_school, graduation, starts_with("specialty"),
+         org_name, prac_id=group_practice_id, prac_size=group_practice_members,
+         street_address1, city, state, zip, starts_with("hosp"),
+         medicare, erx, pqrs, ehr)
+
+phycompare.2013 <- distinct(phycompare.2013)
+
+nodes.2013 <- phycompare.2013 %>%
+  distinct(npi)
+
+office.2013 <- phycompare.2013 %>%
+  distinct(npi, street_address1) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=street_address1,
+              names_prefix="street_")
+
+city.2013 <- phycompare.2013 %>%
+  distinct(npi, city, state) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(city, state)) %>%
+  select(npi, city_1:city_5, state_1:state_5)
+
+practice.2013 <- phycompare.2013 %>%
+  distinct(npi, prac_id, prac_size) %>%
+  arrange(npi, prac_size) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(prac_id, prac_size)) %>%
+  select(npi, prac_id_1:prac_id_3, prac_size_1:prac_size_3)
+
+demo.2013 <- phycompare.2013 %>%
+  distinct(npi, gender, credential, medical_school, graduation) %>%
+  group_by(npi) %>%
+  mutate(count_gender=n_distinct(gender),
+            count_cred=n_distinct(credential),
+            count_med=n_distinct(medical_school),
+            count_grad=n_distinct(graduation)) %>%
+  arrange(npi, count_gender, count_cred, count_grad) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(gender, credential, medical_school, graduation)) %>%
+  select(-c(starts_with("count_")))
+
+nodes.2013 <- nodes.2013 %>%
+  left_join(city.2013, by="npi") %>%
+  left_join(practice.2013, by="npi") %>%
+  left_join(demo.2013, by="npi")
+  
+nodes.2012 <- nodes.2013
+nodes.2011 <- nodes.2013
+nodes.2010 <- nodes.2013
+
+
+## use 2014 q1 for 2014
+phycompare.2014 <- phycompare.2014.q1 %>%
+  mutate(zip = str_sub(zipcode, start=1, end=5)) %>%
+  select(npi, pac_id, enroll_id, last_name, first_name, suffix, gender, credential, 
+         medical_school, graduation, starts_with("specialty"),
+         org_name, prac_id=group_practice_id, prac_size=group_practice_members,
+         street_address1, city, state, zip, starts_with("hosp"),
+         medicare, erx, pqrs, ehr)
+
+phycompare.2014 <- distinct(phycompare.2014)
+
+nodes.2014 <- phycompare.2014 %>%
+  distinct(npi)
+
+office.2014 <- phycompare.2014 %>%
+  distinct(npi, street_address1) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=street_address1,
+              names_prefix="street_")
+
+city.2014 <- phycompare.2014 %>%
+  distinct(npi, city, state) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(city, state)) %>%
+  select(npi, city_1:city_5, state_1:state_5)
+
+practice.2014 <- phycompare.2014 %>%
+  distinct(npi, prac_id, prac_size) %>%
+  arrange(npi, prac_size) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(prac_id, prac_size)) %>%
+  select(npi, prac_id_1:prac_id_3, prac_size_1:prac_size_3)
+
+demo.2014 <- phycompare.2014 %>%
+  distinct(npi, gender, credential, medical_school, graduation) %>%
+  group_by(npi) %>%
+  mutate(count_gender=n_distinct(gender),
+         count_cred=n_distinct(credential),
+         count_med=n_distinct(medical_school),
+         count_grad=n_distinct(graduation)) %>%
+  arrange(npi, count_gender, count_cred, count_grad) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(gender, credential, medical_school, graduation)) %>%
+  select(-c(starts_with("count_")))
+
+nodes.2014 <- nodes.2014 %>%
+  left_join(city.2014, by="npi") %>%
+  left_join(practice.2014, by="npi") %>%
+  left_join(demo.2014, by="npi")
+
+
+## use 2015 q1 for 2015
+phycompare.2015 <- phycompare.2015.q1 %>%
+  mutate(zip = str_sub(zipcode, start=1, end=5)) %>%
+  select(npi, pac_id, enroll_id, last_name, first_name, suffix, gender, credential, 
+         medical_school, graduation, starts_with("specialty"),
+         org_name, prac_id=group_practice_id, prac_size=group_practice_members,
+         street_address1, city, state, zip, starts_with("hosp"),
+         medicare, erx, pqrs, ehr)
+
+phycompare.2015 <- distinct(phycompare.2015)
+
+nodes.2015 <- phycompare.2015 %>%
+  distinct(npi)
+
+office.2015 <- phycompare.2015 %>%
+  distinct(npi, street_address1) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=street_address1,
+              names_prefix="street_")
+
+city.2015 <- phycompare.2015 %>%
+  distinct(npi, city, state) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(city, state)) %>%
+  select(npi, city_1:city_5, state_1:state_5)
+
+practice.2015 <- phycompare.2015 %>%
+  distinct(npi, prac_id, prac_size) %>%
+  arrange(npi, prac_size) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(prac_id, prac_size)) %>%
+  select(npi, prac_id_1:prac_id_3, prac_size_1:prac_size_3)
+
+demo.2015 <- phycompare.2015 %>%
+  distinct(npi, gender, credential, medical_school, graduation) %>%
+  group_by(npi) %>%
+  mutate(count_gender=n_distinct(gender),
+         count_cred=n_distinct(credential),
+         count_med=n_distinct(medical_school),
+         count_grad=n_distinct(graduation)) %>%
+  arrange(npi, count_gender, count_cred, count_grad) %>%
+  group_by(npi) %>% mutate(npi_count=seq(n())) %>% ungroup() %>%
+  pivot_wider(names_from=npi_count, 
+              values_from=c(gender, credential, medical_school, graduation)) %>%
+  select(-c(starts_with("count_")))
+
+nodes.2015 <- nodes.2015 %>%
+  left_join(city.2015, by="npi") %>%
+  left_join(practice.2015, by="npi") %>%
+  left_join(demo.2015, by="npi")
+
+
