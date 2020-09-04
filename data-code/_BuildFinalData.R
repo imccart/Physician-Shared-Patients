@@ -8,7 +8,9 @@
 
 # Preliminaries -----------------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, igraph, data.table, stringr)
+pacman::p_load(igraph, sna, network, ggraph,
+               visNetwork, threejs, network3D, ndtv, 
+               ggplot2, dtplyr, dplyr, lubridate, data.table, stringr)
 
 
 ## set paths
