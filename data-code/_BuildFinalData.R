@@ -2,21 +2,24 @@
 ## Title:         Physician Shared Patients Data
 ## Author:        Ian McCarthy
 ## Date Created:  10/10/2019
-## Date Edited:   8/25/2020
-
+## Date Edited:   9/15/2020
 
 
 # Preliminaries -----------------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, igraph, data.table, stringr, sna)
-
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, stringr,
+               igraph, network, sna, ggraph, visNetwork, threejs,
+               networkD3, ndtv)
 
 ## set paths
 source("data-code/paths.R")
 
 ## Run initial code files
-source("data-code/SharedPatientData.R")
-source("data-code/PhysicianCompare.R")
+#source("data-code/SharedPatientData.R")
+#source("data-code/PhysicianCompare.R")
+
+source("data-code/SharedPatientData_2010.R")
+source("data-code/PhysicianCompare_2013.R")
 
 
 
@@ -40,8 +43,6 @@ edge.data <- PSPD.final.2010 %>%
 saveRDS(node.data, file="data/node_data.RData")
 saveRDS(edge.data, file="data/edge_data.RData")
 saveRDS(PSPD.final.2010, file="data/pspd_data.RData")
-
-
 
 
 edge_small <- edge_data %>%

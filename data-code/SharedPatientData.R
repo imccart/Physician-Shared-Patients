@@ -8,7 +8,7 @@
 # Read and filter data ---------------------------------------------------------------
 
 ## NPI/taxonomy data (scraped from NPPES registry)
-taxonomy <- read_csv(paste0(path.npi,"\\npi_wdata.csv"), 
+taxonomy <- read_csv(paste0(path.npi,"/npi_wdata.csv"), 
                      col_types = cols(
                        npi=col_character(),
                        zip=col_character(),
