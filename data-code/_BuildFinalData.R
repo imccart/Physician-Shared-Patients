@@ -8,7 +8,7 @@
 
 # Preliminaries -----------------------------------------------------------
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, igraph, data.table, stringr)
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, igraph, data.table, stringr, sna)
 
 
 ## set paths
