@@ -30,40 +30,53 @@ node.data <- nodes.2010 %>%
          str_to_lower(city_2)=="atlanta" | 
          str_to_lower(city_3)=="atlanta" | 
          str_to_lower(city_4)=="atlanta" | 
-         str_to_lower(city_5)=="atlanta")
+         str_to_lower(city_5)=="atlanta") %>%
+  left_join(PSPD.final.2010 %>% 
+              distinct(npi1) %>% 
+              mutate(pcp=1,
+                     npi1=as.numeric(npi1)), by=c("npi"="npi1")) %>%
+  mutate(pcp=replace_na(pcp,0))
 
 edge.data <- PSPD.final.2010 %>%
   mutate(npi1=as.numeric(npi1),
          npi2=as.numeric(npi2)) %>%
   filter(str_detect(desc_tax2,"Ortho")) %>%
-  inner_join(node.data %>% select(npi), by=c("npi1"="npi")) %>%
+  inner_join(node.data %>% distinct(npi), by=c("npi1"="npi")) %>%
+  inner_join(node.data %>% distinct(npi), by=c("npi2"="npi")) %>%  
   select(from=npi1, to=npi2, weight=paircount)
-  
 
+
+
+# Small Networks ----------------------------------------------------------
+
+large.pcps <- edge.data %>%
+  group_by(from) %>%
+  mutate(pcp_count=sum(weight)) %>%
+  ungroup() %>%
+  distinct(from, pcp_count) %>%
+  arrange(-pcp_count)
+large.pcps <- head(large.pcps, 20)
+
+edge.small <- edge.data %>%
+  inner_join(large.pcps %>% distinct(from), by="from")
+
+small.from <- edge.small %>%
+  distinct(from) %>%
+  mutate(npi=from)
+
+small.to <- edge.small %>%
+  distinct(to) %>%
+  mutate(npi=to)
+
+npi.small <- bind_rows(small.from, small.to)
+
+node.small <- node.data %>%
+  inner_join(npi.small %>% distinct(npi), by="npi")
+
+
+# Save Data ---------------------------------------------------------------
 saveRDS(node.data, file="data/node_data.RData")
 saveRDS(edge.data, file="data/edge_data.RData")
+saveRDS(node.small, file="data/node_small.RData")
+saveRDS(edge.small, file="data/edge_small.RData")
 saveRDS(PSPD.final.2010, file="data/pspd_data.RData")
-
-
-edge_small <- edge_data %>%
-  group_by(from) %>% mutate(pcp_count=n()) %>% ungroup() %>%
-  top_n(100, wt=pcp_count) %>%
-  select(from, to, weight)
-
-edge.npis <- rbind(edge_small %>% distinct(from) %>% select(npi=from), edge_small %>% distinct(to) %>% select(npi=to))
-
-node_small <- node_data %>% inner_join(edge.npis, by="npi") %>% select(npi, graduation=graduation_1)
-
-referrals <- as_tbl_graph(edge_small, directed=TRUE)
-referrals %>%
-  ggraph(layout="graphopt") +
-  geom_node_point() + 
-  geom_edge_link(aes(width=weight), alpha=0.2)
-
-
-  scale_edge_width(range=c(0.2,2)) +
-  labs(edge_width = "Visits") +
-  theme_graph()
-
-referrals <- graph_from_data_frame(d = edge_small, directed = TRUE)
-  
