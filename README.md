@@ -1,4 +1,5 @@
 # Physician Shared Patient Data
+
 This describes all of the code files and raw data sources needed to form data on physician networks and referral patterns. Project-specific uses of these data are treated as their own repositories and will be cited here over time. This is a living document and changes regularly.
 
 ## Build Data File
@@ -6,9 +7,9 @@ Each of the relevant data sources are available individually and discussed in mo
 
 The [_BuildFinalData.R](data-code/_BuildFinalData.R) code file creates two final datasets: an "edge list" and a "node list". The edge list consists of the physician pairs from the shared patient data, as well as measures of the magnitude of each edge (measured simply by the count of shared patients). The node list is a data set with characteristics for each physician, such as specialty, school attended, and location of the practice. I create seperate edge and node lists for each year from 2010 through 2015.
 
-While the focus of this repo is the shared patient data, I use the edge and node lists to quickly examine the network structure of physician referrals using primarily the `igraph` , `network`, and `sna` packages. Since this is just some quick descriptive work, I limit this to referrals in the Atlanta, GA area, but this restriction can easily be modified in the code. This analysis is available [here](analysis/networks.html).
+While the focus of this repo is the shared patient data, I use the edge and node lists to quickly examine the network structure of physician referrals using primarily the `igraph` and `ggraph` packages. Since this is just some quick descriptive work, I limit the network discussion to referrals in the Atlanta, GA area in 2010, but this restriction can easily be modified in the code. This analysis is available [here](analysis/networks.html).
 
-Major thanks to Ognyanova, K. (2019) Network visualization with R. Retrieved from www.kateto.net/network-visualization. Her tutorial was invaluable in getting started with network analysis in `R`.
+Major thanks to Ognyanova, K. (2019) Network visualization with R. Retrieved from www.kateto.net/network-visualization. Her tutorial was invaluable in getting started with network visualizations in `R`.
 
 ## Raw Data
 This repository uses two main datsets. All of the raw data are publicly available from the Centers for Medicare and Medicaid Services (CMS) website, with some caveats discussed below.

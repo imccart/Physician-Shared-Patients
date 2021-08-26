@@ -1,7 +1,7 @@
 ---
 title: "Physician Referral Networks"
 author: "Ian McCarthy"
-date: "August 2020"
+date: "September 2020"
 output: 
   bookdown::html_document2:
     toc: TRUE
@@ -13,8 +13,9 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, stringr, readxl, data.table, gdata, scales,
-               stargazer, kableExtra, tidygraph, ggraph)
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, stringr, kableExtra,
+               igraph, network, sna, ggraph, visNetwork, threejs,
+               networkD3, ndtv)
 ```
 
 # Starting off
@@ -24,6 +25,9 @@ To begin, let's read in the final edge and node lists created with the [_BuildFi
 ```{r}
 edge_data <- readRDS("../data/edge_data.RData")
 node_data <- readRDS("../data/node_data.RData")
+edge_small <- readRDS("../data/edge_small.RData")
+node_small <- readRDS("../data/node_small.RData")
+
 pspd_data <- readRDS("../data/pspd_data.RData")
 ```
 
@@ -141,23 +145,13 @@ One interesting takeaway from Table \@ref(tab:sum-stats) is that PCPs have far f
 
 # Referral Networks
 
-Now let's take a look at the network structure of PCP referrals to specialist, focusing on shared patients among physicians in Atlanta, GA. For this, we'll use the `tidygraph` package.
+Now let's take a look at the network structure of PCP referrals to specialist, focusing on shared patients among physicians in Atlanta, GA. For this, we'll use the `igraph` and `ggraph` packages.
 
 ```{r echo=FALSE}
-edge_small <- edge_data %>% filter()
-  group_by(from) %>% mutate(pcp_count=n()) %>% ungroup() %>%
-  top_n(10, wt=pcp_count) %>%
-  select(from, to, weight)
-  
-edge.npis <- rbind(edge_small %>% select(npi=from), edge_small %>% select(npi=to))
-node_small <- node_data %>% inner_join(edge.npis, by="npi") %>% select(name=npi, graduation=graduation_1)
-
-referrals <- as_tbl_graph(edge_small, directed=TRUE)
-referrals %>%
-  ggraph(layout="kk") +
-  geom_node_point() + 
-  geom_edge_link(aes(width=weight), alpha=0.8) +
-  scale_edge_width(range=c(0.2,2)) +
-  labs(edge_width = "Visits") +
-  theme_graph()
+net <- graph_from_data_frame(d=data.frame(edge_small), vertices=data.frame(node_small), directed=T)
+net <- simplify(net, remove.multiple=F, remove.loops=T)
+ggraph(net, layout="sugiyama") +
+  geom_edge_link(color="gray50", width=.8) +
+  geom_node_point(aes(color=pcp), show.legend=FALSE, size=3) +
+  theme_void()
 ```
